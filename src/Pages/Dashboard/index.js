@@ -7,7 +7,7 @@ import './styles.css';
 
 export default function Dashboard() {
     const [spots, setSpots] = useState([]);
-    const [requests, setRequest] = useState([]);
+    const [requests, setRequests] = useState([]);
 
     const user_id = localStorage.getItem('user');
     const socket = useMemo(() => socketio('http://localhost:3333', {
@@ -16,7 +16,7 @@ export default function Dashboard() {
 
     useEffect(() => {
         socket.on('booking_request', data => {
-            setRequest([...requests, data]);
+            setRequests([...requests, data]);
         });
     }, [requests, socket]);
 
@@ -35,6 +35,18 @@ export default function Dashboard() {
         loadSpots();
     }, []);
 
+    async function handleAccept(id) {
+        await api.post(`/bookings/${id}/approvals`);
+
+        setRequests(requests.filter(request => request._id !== id));
+    }
+
+    async function handleReject(id) {
+        await api.post(`/bookings/${id}/rejections`);
+
+        setRequests(requests.filter(request => request._id !== id));
+    }
+
     return(
         <>
             <ul className="notifications">
@@ -43,8 +55,8 @@ export default function Dashboard() {
                         <p>
                             <strong>{request.user.email}</strong> está solicitando uma reserva em <strong>{request.spot.company}</strong> para a data: <strong>{request.date}</strong>
                         </p>
-                        <button className="accept">ACEITAR</button>
-                        <button className="reject">REJEITAR</button>
+                        <button className="accept" onClick={() => handleAccept(request._id)}>ACEITAR</button>
+                        <button className="reject" onClick={() => handleReject(request._id)}>REJEITAR</button>
                     </li>
                 ))}
             </ul>
